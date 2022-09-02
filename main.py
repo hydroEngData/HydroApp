@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+##import plotly.express as px
 import plotly.graph_objects as go
 
 st.set_page_config(
@@ -166,7 +166,7 @@ if add_selectbox == "Resample":
                 formatted_data = pd.DataFrame({'#.t\n'
                                                '#d': resampled_data['WEST_date'],
                                                    str(RG_name): resampled_data['sel_plot']})
-            formatted_data.loc[0] = [tr50, 0.0]
+            formatted_data.loc[0] = [50, 0.0]
             formatted_data.columns = pd.MultiIndex.from_arrays(formatted_data.iloc[0:1].values)
             st.write(formatted_data)
 
