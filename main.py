@@ -217,7 +217,7 @@ if add_selectbox == "Contact":
             msg = EmailMessage()
             msg.set_content(message)
             email_address = 'easydro07@gmail.com'
-            msg['Subject'] = 'From  ' + email
+            msg['Subject'] = 'From  ' + fullname + '<' + email + '>'
             msg['From'] = email_address
             msg['To'] = email_address
             passcode = 'jeetaqchprvyqdbu'        # add passcode here
