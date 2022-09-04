@@ -35,11 +35,11 @@ add_selectbox = st.sidebar.selectbox(
     ("Data organiser tool", "Contact"))
 
 if add_selectbox == "Data organiser tool":
-
-    #st.image("File.PNG", width=25)
+    data_upload = []
+    #if data_upload not in st.session_state :
     data_upload = st.file_uploader('Browse your timeseries file')
     if data_upload is None:
-        st.stop()
+         st.stop()
 
     data = pd.read_csv(data_upload)
 
@@ -47,7 +47,7 @@ if add_selectbox == "Data organiser tool":
 
     col1, col2 = st.columns(2)
     with col1:
-        time_col = st.selectbox('What is the time column of your dataset?', (data.columns))
+        time_col = st.selectbox('What is the datetime column of your dataset?', (data.columns))
 
     data['sel_date'] = data[time_col]
     data['sel_date'] = pd.to_datetime(data['sel_date'])
@@ -92,9 +92,10 @@ if add_selectbox == "Data organiser tool":
 
     resampled_data = data.resample((resamp_param)).bfill(limit=1).interpolate()
 
-    col3, col4, col5 = st.columns(3)
+###treatment button 1
     method = ['mean', 'threshold']
     if st.checkbox("Data treatment tool"):
+        col3, col4, col5 = st.columns(3)
         with col3:
             treat_method = st.selectbox('Select the treatment type', method)
         if treat_method == 'mean':
@@ -119,6 +120,48 @@ if add_selectbox == "Data organiser tool":
                     resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i-1]
                 else:
                     resampled_data['sel_plot_av'][i] = resampled_data['sel_plot'][i]
+
+###treatment button 2
+        if 'treatment_button' not in st.session_state:
+            st.session_state.treatment_button = False
+        def callback():
+            st.session_state.treatment_button = True
+        if (st.button('Add a treatment', on_click=callback)
+                or st.session_state.treatment_button):
+
+            col33, col44, col55 = st.columns(3)
+            with col33:
+            #  st.session_state.treatment_button
+            #if treatment_button:
+                treat_method1 = st.selectbox('Select the additional treatment type', method)
+                if treat_method1 == 'mean':
+                    with col44:
+                        windo1 = st.number_input('Select the added treatment window', min_value=1, max_value=100000000000000,
+                                                value=5,
+                                                step=1)
+                    resampled_data['sel_plot_av'] = resampled_data['sel_plot_av'].rolling(windo1, min_periods=1,
+                                                                                       center=True).mean()
+
+                if treat_method1 == 'threshold':
+                    with col44:
+                        thresh_min1 = st.number_input('Select the min threshold value', min_value=-100000000000000,
+                                                     max_value=100000000000000,
+                                                     value=int(resampled_data['sel_plot_av'].min() - 1),
+                                                     step=1)
+                    with col55:
+                        thresh_max1 = st.number_input('Select the max threshold value', min_value=-100000000000000,
+                                                     max_value=100000000000000,
+                                                     value=int(resampled_data['sel_plot_av'].max() + 1),
+                                                     step=1)
+
+                    resampled_data['sel_plot_av'] = resampled_data['sel_plot_av'].copy()
+                    for i in range(1, len(resampled_data)):
+                        if resampled_data['sel_plot_av'][i] <= thresh_min1:
+                            resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i - 1]
+                        elif resampled_data['sel_plot_av'][i] >= thresh_max1:
+                            resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i - 1]
+                        else:
+                            resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i]
 
     #st.dataframe(resampled_data)
 
@@ -148,7 +191,7 @@ if add_selectbox == "Data organiser tool":
 
     st.write(fig)
 
-    ###Download button
+###Download button 1
     try:
         final_df = pd.DataFrame({'time': resampled_data.index,
                                  str(option): resampled_data.sel_plot,
@@ -177,31 +220,44 @@ if add_selectbox == "Data organiser tool":
             try:
                 formatted_data = pd.DataFrame({'RG': RG_name,
                                                'date': resampled_data['SWMM_date'],
-                                               'Treated resampled value': resampled_data['sel_plot_av']})
+                                               'Treated_resampled_value': resampled_data['sel_plot_av']})
             except KeyError:
                 formatted_data = pd.DataFrame({'RG': RG_name,
                                                'date': resampled_data['SWMM_date'],
-                                               'Resampled value': resampled_data['sel_plot']})
+                                               'Resampled_value': resampled_data['sel_plot']})
             st.write(formatted_data)
 
         elif simulator == 'WEST':
-            formatted_data = []
-            RG_name = st.text_input('Enter a raingauge name')
-            resampled_data = resampled_data.reset_index()
-            resampled_data['WEST_date'] = (resampled_data.sel_date - resampled_data.sel_date.shift()).dt.total_seconds()
-            resampled_data['WEST_date'] = np.cumsum(resampled_data['WEST_date'] / 60 / 60 / 24)
-            resampled_data['WEST_date'][0] = 0.0
-            valUnit = st.text_input('write the units')
-            try:
-                formatted_data = pd.DataFrame({'#.t \n #d': resampled_data['WEST_date'],
-                                               str(RG_name): resampled_data['sel_plot_av']})
-            except KeyError:
-                formatted_data = pd.DataFrame({'#.t\n'
-                                               '#d': resampled_data['WEST_date'],
-                                               str(RG_name): resampled_data['sel_plot']})
-            formatted_data.loc[0] = [50, 0.0]
-            formatted_data.columns = pd.MultiIndex.from_arrays(formatted_data.iloc[0:1].values)
-            st.write(formatted_data)
+            st.warning('Worksite on progress, please come back later.')
+            # formatted_data = []
+            # RG_name = st.text_input('Enter a raingauge name')
+            # resampled_data = resampled_data.reset_index()
+            # resampled_data['WEST_date'] = (resampled_data.sel_date - resampled_data.sel_date.shift()).dt.total_seconds()
+            # resampled_data['WEST_date'] = np.cumsum(resampled_data['WEST_date'] / 60 / 60 / 24)
+            # resampled_data['WEST_date'][0] = 0.0
+            # valUnit = st.text_input('write the units')
+            # try:
+            #     formatted_data = pd.DataFrame({'#.t \n #d': resampled_data['WEST_date'],
+            #                                    str(RG_name): resampled_data['sel_plot_av']})
+            # except KeyError:
+            #     formatted_data = pd.DataFrame({'#.t\n'
+            #                                    '#d': resampled_data['WEST_date'],
+            #                                    str(RG_name): resampled_data['sel_plot']})
+            # formatted_data.loc[0] = [50, 0.0]
+            # formatted_data.columns = pd.MultiIndex.from_arrays(formatted_data.iloc[0:1].values)
+            # st.write(formatted_data)
+
+###Download button 2
+        csv_model = formatted_data.to_csv(sep='\t', index=False).encode('utf-8')
+
+        st.download_button(
+            label="Download SWMM RF input",
+            data=csv_model,
+            file_name='SWMM_RF_input.csv',
+            mime='text/csv',
+        )
+
+
 
 if add_selectbox == "Contact":
     st.write('This is an experimental App.')
