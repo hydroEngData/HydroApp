@@ -6,9 +6,12 @@ import streamlit as st
 import pandas as pd
 ##import plotly.express as px
 import plotly.graph_objects as go
-#from Background import set_bg_hack
+# from Background import set_bg_hack
 import smtplib
 from email.message import EmailMessage
+from io import StringIO
+import csv
+
 
 ##Browser tab configuration
 st.set_page_config(
@@ -36,21 +39,53 @@ add_selectbox = st.sidebar.selectbox(
 
 if add_selectbox == "Data organiser tool":
     data_upload = []
-    #if data_upload not in st.session_state :
-    data_upload = st.file_uploader('Browse your timeseries file')
+    data_upload = st.file_uploader('Browse your timeseries file (xls, xlsx, txt or csv)')
     if data_upload is None:
-         st.stop()
+        st.stop()
 
-    data = pd.read_csv(data_upload)
+    if data_upload.type == "text/csv" or data_upload.type == "text/plain":
+        data = pd.read_csv(data_upload, sep=None)
+
+    elif str(data_upload.name[-4:-1]) == "xls":
+        data = pd.read_excel(data_upload)
+
+    ###Tentative session state for uploader
+    # if data not in st.session_state:
+    #     data = st.file_uploader('Browse your timeseries file')
+    #     if data is None:
+    #         st.stop()
+    #     st.session_state["data"] = pd.read_csv(data)
+    #
+    # data = st.session_state["data"]
+
+    # if "data" in st.session_state:
+    #    st.sidebar.dataframe(pd.read_csv(StringIO(st.session_state["data"])))
+    a = 0
+    for col in data.columns:
+        if data[col].dtype == 'object':
+            try:
+                data[col] = pd.to_datetime(data[col])
+                date = a
+                a =+ 1
+            except ValueError:
+                pass
+
+    #st.write(str(date))
 
     st.markdown("""---""")
 
+
     col1, col2 = st.columns(2)
     with col1:
-        time_col = st.selectbox('What is the datetime column of your dataset?', (data.columns))
+        time_col = st.selectbox('What is the datetime column of your dataset?', (data.columns), index=date)
 
     data['sel_date'] = data[time_col]
-    data['sel_date'] = pd.to_datetime(data['sel_date'])
+    try:
+        data['sel_date'] = pd.to_datetime(data['sel_date'])
+    except ValueError:
+        st.error('Please select a valid datetime column')
+        st.stop()
+
     data['delta'] = (data['sel_date'] - data['sel_date'].shift()).dt.total_seconds()
     delta = np.mean(data.delta)
 
@@ -90,9 +125,9 @@ if add_selectbox == "Data organiser tool":
     data = data.set_index('sel_date', drop=True)
     data = data.truncate(before=values[0], after=values[1])
 
-    resampled_data = data.resample((resamp_param)).bfill(limit=1).interpolate()
+    resampled_data = data.resample((resamp_param)).bfill(limit=1)#.interpolate()
 
-###treatment button 1
+    ###treatment button 1
     method = ['mean', 'threshold']
     if st.checkbox("Data treatment tool"):
         col3, col4, col5 = st.columns(3)
@@ -106,53 +141,60 @@ if add_selectbox == "Data organiser tool":
 
         if treat_method == 'threshold':
             with col4:
-                thresh_min = st.number_input('Select the min threshold value', min_value=-100000000000000, max_value=100000000000000, value=int(resampled_data['sel_plot'].min()-1),
-                                        step=1)
+                thresh_min = st.number_input('Select the min threshold value', min_value=-100000000000000,
+                                             max_value=100000000000000, value=int(resampled_data['sel_plot'].min() - 1),
+                                             step=1)
             with col5:
-                thresh_max = st.number_input('Select the max threshold value', min_value=-100000000000000, max_value=100000000000000, value=int(resampled_data['sel_plot'].max()+1),
-                                        step=1)
+                thresh_max = st.number_input('Select the max threshold value', min_value=-100000000000000,
+                                             max_value=100000000000000, value=int(resampled_data['sel_plot'].max() + 1),
+                                             step=1)
 
             resampled_data['sel_plot_av'] = resampled_data['sel_plot'].copy()
-            for i in range(1,len(resampled_data)):
+            for i in range(1, len(resampled_data)):
                 if resampled_data['sel_plot'][i] <= thresh_min:
-                    resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i-1]
+                    resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i - 1]
                 elif resampled_data['sel_plot'][i] >= thresh_max:
-                    resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i-1]
+                    resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i - 1]
                 else:
                     resampled_data['sel_plot_av'][i] = resampled_data['sel_plot'][i]
 
-###treatment button 2
+        ###treatment button 2
         if 'treatment_button' not in st.session_state:
             st.session_state.treatment_button = False
+
+
         def callback():
             st.session_state.treatment_button = True
+
+
         if (st.button('Add a treatment', on_click=callback)
                 or st.session_state.treatment_button):
 
             col33, col44, col55 = st.columns(3)
             with col33:
-            #  st.session_state.treatment_button
-            #if treatment_button:
+                #  st.session_state.treatment_button
+                # if treatment_button:
                 treat_method1 = st.selectbox('Select the additional treatment type', method)
                 if treat_method1 == 'mean':
                     with col44:
-                        windo1 = st.number_input('Select the added treatment window', min_value=1, max_value=100000000000000,
-                                                value=5,
-                                                step=1)
+                        windo1 = st.number_input('Select the added treatment window', min_value=1,
+                                                 max_value=100000000000000,
+                                                 value=5,
+                                                 step=1)
                     resampled_data['sel_plot_av'] = resampled_data['sel_plot_av'].rolling(windo1, min_periods=1,
-                                                                                       center=True).mean()
+                                                                                          center=True).mean()
 
                 if treat_method1 == 'threshold':
                     with col44:
                         thresh_min1 = st.number_input('Select the min threshold value', min_value=-100000000000000,
-                                                     max_value=100000000000000,
-                                                     value=int(resampled_data['sel_plot_av'].min() - 1),
-                                                     step=1)
+                                                      max_value=100000000000000,
+                                                      value=int(resampled_data['sel_plot_av'].min() - 1),
+                                                      step=1)
                     with col55:
                         thresh_max1 = st.number_input('Select the max threshold value', min_value=-100000000000000,
-                                                     max_value=100000000000000,
-                                                     value=int(resampled_data['sel_plot_av'].max() + 1),
-                                                     step=1)
+                                                      max_value=100000000000000,
+                                                      value=int(resampled_data['sel_plot_av'].max() + 1),
+                                                      step=1)
 
                     resampled_data['sel_plot_av'] = resampled_data['sel_plot_av'].copy()
                     for i in range(1, len(resampled_data)):
@@ -163,7 +205,7 @@ if add_selectbox == "Data organiser tool":
                         else:
                             resampled_data['sel_plot_av'][i] = resampled_data['sel_plot_av'][i]
 
-    #st.dataframe(resampled_data)
+    # st.dataframe(resampled_data)
 
     # PLOT
     fig = go.Figure()
@@ -191,7 +233,7 @@ if add_selectbox == "Data organiser tool":
 
     st.write(fig)
 
-###Download button 1
+    ###Download button 1
     try:
         final_df = pd.DataFrame({'time': resampled_data.index,
                                  str(option): resampled_data.sel_plot,
@@ -247,7 +289,7 @@ if add_selectbox == "Data organiser tool":
             # formatted_data.columns = pd.MultiIndex.from_arrays(formatted_data.iloc[0:1].values)
             # st.write(formatted_data)
 
-###Download button 2
+        ###Download button 2
         csv_model = formatted_data.to_csv(sep='\t', index=False).encode('utf-8')
 
         st.download_button(
@@ -257,8 +299,6 @@ if add_selectbox == "Data organiser tool":
             mime='text/csv',
         )
 
-
-
 if add_selectbox == "Contact":
     st.write('This is an experimental App.')
     st.write('Please feel free to share how much you like or not the app, '
@@ -266,7 +306,7 @@ if add_selectbox == "Contact":
     with st.form("my_form"):
         fullname = st.text_input('Fullname')
         email = st.text_input('Email')
-        message = st.text_area('Message', value='Hello, your app is amazing but...')#
+        message = st.text_area('Message', value='Hello, your app is amazing but...')  #
         submitted = st.form_submit_button("Submit")
 
         if submitted:
@@ -276,7 +316,7 @@ if add_selectbox == "Contact":
             msg['Subject'] = 'From  ' + fullname + '<' + email + '>'
             msg['From'] = email_address
             msg['To'] = email_address
-            passcode = 'jeetaqchprvyqdbu'        # add passcode here
+            passcode = 'jeetaqchprvyqdbu'  # add passcode here
 
             conn = smtplib.SMTP_SSL('smtp.gmail.com', 465)
             conn.login(email_address, passcode)
