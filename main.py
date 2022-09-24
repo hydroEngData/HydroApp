@@ -123,6 +123,8 @@ if add_selectbox == "Data organiser tool":
     st.markdown("""---""")
 
     data = data.set_index('sel_date', drop=True)
+    data = data.sort_index()
+    data = data[~data.index.duplicated(keep='first')]
     data = data.truncate(before=values[0], after=values[1])
 
     resampled_data = data.resample((resamp_param)).bfill(limit=1)#.interpolate()
