@@ -12,7 +12,6 @@ from email.message import EmailMessage
 from io import StringIO
 import csv
 
-
 ##Browser tab configuration
 st.set_page_config(
     page_title="EasYdro",
@@ -60,31 +59,35 @@ if add_selectbox == "Data organiser tool":
 
     # if "data" in st.session_state:
     #    st.sidebar.dataframe(pd.read_csv(StringIO(st.session_state["data"])))
+
+#Datetime column automatic identification
     a = 0
     for col in data.columns:
         if data[col].dtype == 'object':
             try:
                 data[col] = pd.to_datetime(data[col])
                 date = a
-                a =+ 1
+                a = + 1
             except ValueError:
                 pass
 
-    #st.write(str(date))
+# Float column automatic identification
+    df_num = data.select_dtypes(include=[np.float])
 
     st.markdown("""---""")
-
 
     col1, col2 = st.columns(2)
     with col1:
         time_col = st.selectbox('What is the datetime column of your dataset?', (data.columns), index=date)
 
     data['sel_date'] = data[time_col]
+    data['sel_date'] = data['sel_date'].dt.strftime('%y-%m-%d %h:%I:%s')
     try:
         data['sel_date'] = pd.to_datetime(data['sel_date'])
     except ValueError:
         st.error('Please select a valid datetime column')
         st.stop()
+
 
     data['delta'] = (data['sel_date'] - data['sel_date'].shift()).dt.total_seconds()
     delta = np.mean(data.delta)
@@ -99,8 +102,13 @@ if add_selectbox == "Data organiser tool":
         units = ['D', 'S', 'min', 'H']
 
     with col2:
-        option = st.selectbox('What data do you want to plot?', (data.columns))
+        if df_num.empty:
+            option = st.selectbox('What data do you want to plot?', (data.columns))
+        else:
+            option = st.selectbox('What data do you want to plot?', (df_num.columns))
+
         data['sel_plot'] = data[option]
+
 
     st.markdown("""---""")
 
@@ -127,7 +135,7 @@ if add_selectbox == "Data organiser tool":
     data = data[~data.index.duplicated(keep='first')]
     data = data.truncate(before=values[0], after=values[1])
 
-    resampled_data = data.resample((resamp_param)).bfill(limit=1)#.interpolate()
+    resampled_data = data.resample((resamp_param)).mean().interpolate()
 
     ###treatment button 1
     method = ['mean', 'threshold']
@@ -244,14 +252,23 @@ if add_selectbox == "Data organiser tool":
         final_df = pd.DataFrame({'time': resampled_data.index,
                                  str(option): resampled_data.sel_plot})
 
-    csv = final_df.to_csv(index=False).encode('utf-8')
+#See dataframe
 
+    with st.expander('Check your raw data'):
+        st.write(data)
+    with st.expander('Check your treated data'):
+        st.write(resampled_data)
+
+
+    csv = final_df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="Download data as CSV",
+        label="Download treated data as CSV",
         data=csv,
         file_name='treated data.csv',
         mime='text/csv',
     )
+
+    st.markdown("""---""")
 
     with st.expander('Input simulator formatting'):
         model_name = ['SWMM', 'InfoWorks', 'WEST']
