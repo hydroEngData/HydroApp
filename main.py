@@ -73,6 +73,9 @@ if add_selectbox == "Data organiser tool":
 
 # Float column automatic identification
     df_num = data.select_dtypes(include=[np.float])
+    st.write(data)
+    st.write(df_num)
+    st.write(date)
 
     st.markdown("""---""")
 
