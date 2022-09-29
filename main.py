@@ -76,6 +76,7 @@ if add_selectbox == "Data organiser tool":
     st.write(data)
     st.write(df_num)
     st.write(date)
+    data[date] = pd.to_datetime(data[date])
 
     st.markdown("""---""")
 
