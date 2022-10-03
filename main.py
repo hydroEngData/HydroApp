@@ -46,8 +46,9 @@ if add_selectbox == "Data organiser tool":
         data = pd.read_csv(data_upload, sep=None)
 
     elif str(data_upload.name[-4:-1]) == "xls":
-        data = pd.read_excel(data_upload)
+        data = pd.read_excel(data_upload)#, engine='openpyxl')
 
+    st.write(data.columns)
     ###Tentative session state for uploader
     # if data not in st.session_state:
     #     data = st.file_uploader('Browse your timeseries file')
@@ -73,12 +74,10 @@ if add_selectbox == "Data organiser tool":
 
 # Float column automatic identification
     df_num = data.select_dtypes(include=[np.float])
-    st.write(data)
-    st.write(df_num)
-    st.write(date)
-    data[date] = pd.to_datetime(data[date])
+    #data[date] = pd.to_datetime(data[date])
 
     st.markdown("""---""")
+    st.write(data.columns)
 
     col1, col2 = st.columns(2)
     with col1:
