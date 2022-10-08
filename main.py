@@ -1,5 +1,7 @@
 from datetime import timedelta
+from dateutil import parser as date_parser
 from datetime import datetime
+from timeit import timeit
 
 import numpy as np
 import streamlit as st
@@ -86,7 +88,7 @@ if add_selectbox == "Data organiser tool":
     data['sel_date'] = data[time_col]
     data['sel_date'] = data['sel_date'].dt.strftime('%y-%m-%d %h:%I:%s')
     try:
-        data['sel_date'] = pd.to_datetime(data['sel_date'])
+        bool(datetime.strptime(data['sel_date'], '%y-%m-%d %h:%I:%s'))
     except ValueError:
         st.error('Please select a valid datetime column')
         st.stop()
