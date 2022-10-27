@@ -87,7 +87,7 @@ if add_selectbox == "Data organiser tool":
     data['sel_date'] = data['sel_date'].dt.strftime('%y-%m-%d %h:%I:%s')
     st.write(str(data.dtypes))
 
-    if data[col].dtype == 'object':
+    if data['sel_date'].dtype == 'object':
         try:
             data['sel_date'] = pd.to_datetime(data['sel_date'])
         except ValueError:
