@@ -89,7 +89,7 @@ if add_selectbox == "Data organiser tool":
 
     if data['sel_date'].dtype == 'object':
         try:
-            data['sel_date'] = data['sel_data'].astype('datetime64[ns]')
+            data['sel_date'] = data['sel_date'].astype('datetime64[ns]')
         except ValueError:
             st.error('Please select a valid datetime column')
             st.stop()
