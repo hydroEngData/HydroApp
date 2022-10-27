@@ -77,15 +77,14 @@ if add_selectbox == "Data organiser tool":
     #data[date] = pd.to_datetime(data[date])
 
     st.markdown("""---""")
-    st.write(data.columns)
-
     col1, col2 = st.columns(2)
     with col1:
         time_col = st.selectbox('What is the datetime column of your dataset?', (data.columns), index=date)
 
     data['sel_date'] = data[time_col]
     data['sel_date'] = data['sel_date'].dt.strftime('%y-%m-%d %h:%I:%s')
-    st.write(str(data.dtypes))
+    data['sel_date'] = pd.to_datetime(data['sel_date'])
+    #df = data.select_dtypes(include=[np.datetime64])
 
     if data['sel_date'].dtype == 'object':
         try:
