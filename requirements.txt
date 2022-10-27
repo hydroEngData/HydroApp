@@ -1,4 +1,4 @@
-plotly=5.5.0
+plotly==5.5.0
 xlrd==1.2.0
 openpyxl==3.0.10
 pandas==1.4.0
