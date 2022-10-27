@@ -83,7 +83,7 @@ if add_selectbox == "Data organiser tool":
 
     data['sel_date'] = data[time_col]
     data['sel_date'] = data['sel_date'].dt.strftime('%y-%m-%d %h:%I:%s')
-    data['sel_date'] = data['sel_data'].astype('datetime64[ns]')
+    data['sel_date'] = data['sel_date'].astype('datetime64[ns]')
     #data['sel_date'] = pd.to_datetime(data['sel_date'])
     #df = data.select_dtypes(include=[np.datetime64])
 
