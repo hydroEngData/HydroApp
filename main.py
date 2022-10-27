@@ -86,11 +86,13 @@ if add_selectbox == "Data organiser tool":
     data['sel_date'] = data[time_col]
     data['sel_date'] = data['sel_date'].dt.strftime('%y-%m-%d %h:%I:%s')
     st.write(str(data.dtypes))
-    try:
-        data['sel_date'] = pd.to_datetime(data['sel_date'])
-    except ValueError:
-        st.error('Please select a valid datetime column')
-        st.stop()
+
+    if data[col].dtype == 'object':
+        try:
+            data['sel_date'] = pd.to_datetime(data['sel_date'])
+        except ValueError:
+            st.error('Please select a valid datetime column')
+            st.stop()
 
 
     data['delta'] = (data['sel_date'] - data['sel_date'].shift()).dt.total_seconds()
