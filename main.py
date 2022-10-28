@@ -89,6 +89,7 @@ if add_selectbox == "Data organiser tool":
 
     if df.iloc[:,0].name != str(time_col):
         st.error('Please select a valid datetime column')
+        st.stop()
 
 
     # if data['sel_date'].dtype == 'object':
