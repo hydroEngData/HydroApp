@@ -87,7 +87,9 @@ if add_selectbox == "Data organiser tool":
     #data['sel_date'] = pd.to_datetime(data['sel_date'])
     df = data.select_dtypes(include=[np.datetime64])
 
-    st.write(df.iloc[:,0].name)
+    if df.iloc[:,0].name != str(time_col):
+        st.error('Please select a valid datetime column')
+
 
     # if data['sel_date'].dtype == 'object':
     #     try:
